@@ -1,0 +1,107 @@
+#!/usr/bin/env node
+(function(){
+  var doc, fs, path, wrench, exec, read, readAsJson, write, toJson, makeTree, localBin, sanitiseShellArgs, sh, localSh, makeKalamoiConfig, makePapyrConfig, buildDocumentation, docopt, pkgMeta, slice$ = [].slice;
+  doc = 'Calliope — CLI for kalamoi/papyr documentation in JS projects.\n\nUsage:\n  calliope build [options]\n  calliope -h | --help\n  calliope --version\n\nOptions:\n  -c, --config=<json>     The `package.json` file to use.\n  -h, --help              Displays this screen and exits.\n  -v, --version           Displays this screen and exits.';
+  fs = require('fs');
+  path = require('path');
+  wrench = require('wrench');
+  exec = require('execSync').stdout;
+  import$(global, require('prelude-ls'));
+  read = function(pathname){
+    return fs.readFileSync(pathname, 'utf-8');
+  };
+  readAsJson = function(pathname){
+    return JSON.parse(read(pathname));
+  };
+  write = curry$(function(pathname, contents){
+    return fs.writeFileSync(pathname, contents, 'utf-8');
+  });
+  toJson = JSON.stringify;
+  makeTree = function(pathname){
+    return wrench.mkdirSyncRecursive(pathname);
+  };
+  localBin = function(pathname){
+    return path.resolve(__dirname, '../node_modules/.bin', pathname);
+  };
+  sanitiseShellArgs = function(xs){
+    return map(toJson, xs).join(' ');
+  };
+  sh = function(cmd){
+    var args;
+    args = slice$.call(arguments, 1);
+    console.log("\n<> " + cmd + " " + sanitiseShellArgs(args));
+    return exec(cmd + " " + sanitiseShellArgs(args));
+  };
+  localSh = function(cmd){
+    var args;
+    args = slice$.call(arguments, 1);
+    return sh.apply(null, [localBin(cmd)].concat(slice$.call(args)));
+  };
+  makeKalamoiConfig = function(pkg){
+    var ref$;
+    return {
+      packages: (ref$ = pkg.calliope) != null ? ref$.packages : void 8
+    };
+  };
+  makePapyrConfig = curry$(function(pkg, entities){
+    var ref$;
+    return {
+      project: pkg.name,
+      version: pkg.version,
+      template: (ref$ = pkg.calliope) != null ? ref$.template : void 8,
+      copyright: (ref$ = pkg.calliope) != null ? ref$.copyright : void 8,
+      output: (ref$ = pkg.calliope) != null ? ref$.output : void 8,
+      apis: [{
+        authors: ([pkg.author].concat(pkg.contributors || [])).filter(Boolean),
+        copyright: (ref$ = pkg.calliope) != null ? ref$.copyright : void 8,
+        licence: pkg.license,
+        repository: (ref$ = pkg.repository) != null ? ref$.url : void 8,
+        entities: ['.calliope/entities.json'],
+        examples: ((ref$ = pkg.calliope) != null ? ref$.examples : void 8) || ((ref$ = pkg.directories) != null ? ref$.example : void 8)
+      }]
+    };
+  });
+  buildDocumentation = function(options){
+    var meta;
+    console.log("› Using configuration from " + options['--config']);
+    meta = readAsJson(options['--config']);
+    makeTree('.calliope');
+    console.log('› Making kalamoi configuration from package.json...');
+    write('.calliope/kalamoi.json', toJson(makeKalamoiConfig(meta)));
+    console.log('› Generating papyr configuration from package.json...');
+    write('.calliope/papyr.json', toJson(makePapyrConfig(meta, read('.calliope/kalamoi.json'))));
+    console.log('› Extracting documentation metadata (kalamoi generate)...');
+    write('.calliope/entities.json', localSh('kalamoi', 'generate', '.calliope/kalamoi.json'));
+    console.log('› Building documentation (papyr build)...');
+    return console.log(localSh('papyr', 'build', '.calliope/papyr.json'));
+  };
+  docopt = require('docopt').docopt;
+  pkgMeta = require('../package');
+  (function(args){
+    args['--config'] = args['--config'] || 'package.json';
+    switch (false) {
+    case !args.build:
+      buildDocumentation(args);
+    }
+  }.call(this, docopt(doc, {
+    version: pkgMeta.version
+  })));
+  function import$(obj, src){
+    var own = {}.hasOwnProperty;
+    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
+    return obj;
+  }
+  function curry$(f, bound){
+    var context,
+    _curry = function(args) {
+      return f.length > 1 ? function(){
+        var params = args ? args.concat() : [];
+        context = bound ? context || this : this;
+        return params.push.apply(params, arguments) <
+            f.length && arguments.length ?
+          _curry.call(context, params) : f.apply(context, params);
+      } : f;
+    };
+    return _curry();
+  }
+}).call(this);

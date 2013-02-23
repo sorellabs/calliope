@@ -2,7 +2,7 @@
   "name": "calliope",
   "version": "0.0.0",
   "description": "Command line interface for kalamoi/papyr documentation in JS projects.",
-  "main": "index.js",
+  "bin": "./bin/calliope"
   "dependencies": {
     "docopt": "~0.4.0",
     "prelude-ls": "~0.6.0",
