@@ -5,7 +5,11 @@
   "main": "index.js",
   "dependencies": {
     "docopt": "~0.4.0",
-    "prelude-ls": "~0.6.0"
+    "prelude-ls": "~0.6.0",
+    "execSync": "0.0.3",
+    "kalamoi": "~0.1.0",
+    "papyr": "~0.1.0",
+    "wrench": "~1.4.4"
   },
   "devDependencies": {},
   "scripts": {
