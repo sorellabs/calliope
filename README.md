@@ -72,3 +72,6 @@ $ npm install -g calliope
 ## Licence
 
 MIT/X11. ie.: do whatever you want with it.
+
+[papyr]: https://github.com/killdream/papyr
+[kalamoi]: https://github.com/killdream/kalamoi
